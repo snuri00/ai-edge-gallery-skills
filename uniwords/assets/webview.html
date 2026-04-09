@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uniwords</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(135deg, #0a1628, #1a2a4a, #0f2027);
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 8px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 380px;
+    margin-bottom: 10px;
+  }
+  .title { font-size: 1.3rem; font-weight: 800; letter-spacing: 2px; }
+  .title span { color: #feca57; }
+  .score-box {
+    background: rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  .score-box b { color: #feca57; font-size: 1.1rem; }
+
+  .progress-bar {
+    width: 100%;
+    max-width: 380px;
+    height: 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #feca57, #ff6b6b);
+    border-radius: 4px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  .word-input-area {
+    width: 100%;
+    max-width: 380px;
+    min-height: 52px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    margin-bottom: 12px;
+    gap: 6px;
+    flex-wrap: wrap;
+    border: 2px solid rgba(255,255,255,0.15);
+    transition: border-color 0.2s;
+  }
+  .word-input-area.correct { border-color: #2ed573; animation: flashGreen 0.5s; }
+  .word-input-area.wrong { border-color: #ff4757; animation: shake 0.4s; }
+  .word-input-area.duplicate { border-color: #ffa502; animation: shake 0.4s; }
+
+  @keyframes flashGreen { 0%,100% { background: rgba(255,255,255,0.08); } 50% { background: rgba(46,213,115,0.2); } }
+  @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+
+  .input-letter {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #feca57;
+    letter-spacing: 2px;
+  }
+  .cursor {
+    width: 2px;
+    height: 1.5rem;
+    background: #feca57;
+    animation: blink 1s infinite;
+  }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+  .letters-grid {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 380px;
+  }
+  .letter-tile {
+    width: 48px;
+    height: 52px;
+    background: linear-gradient(145deg, #2d3a5c, #1e2a48);
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  }
+  .letter-tile:active { transform: scale(0.92); }
+  .letter-tile.selected {
+    background: linear-gradient(145deg, #feca57, #f0932b);
+    color: #1a1a2e;
+    border-color: #feca57;
+    transform: scale(0.92);
+    box-shadow: 0 0 12px rgba(254,202,87,0.4);
+  }
+
+  .actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .btn {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.1s;
+    letter-spacing: 0.5px;
+  }
+  .btn:active { transform: scale(0.95); }
+  .btn-submit {
+    background: linear-gradient(135deg, #2ed573, #17c964);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(46,213,115,0.3);
+  }
+  .btn-clear {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+  }
+  .btn-shuffle {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+  }
+  .btn-hint {
+    background: linear-gradient(135deg, #a855f7, #7c3aed);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(168,85,247,0.3);
+  }
+
+  .found-section {
+    width: 100%;
+    max-width: 380px;
+    flex: 1;
+  }
+  .found-header {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .found-words {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-height: 180px;
+    overflow-y: auto;
+  }
+  .found-word {
+    background: rgba(46,213,115,0.15);
+    border: 1px solid rgba(46,213,115,0.3);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #2ed573;
+  }
+  .found-word.bonus {
+    background: rgba(254,202,87,0.2);
+    border-color: rgba(254,202,87,0.4);
+    color: #feca57;
+  }
+
+  .message {
+    font-size: 0.85rem;
+    min-height: 1.2rem;
+    margin-bottom: 6px;
+    font-weight: 600;
+    text-align: center;
+  }
+  .message.ok { color: #2ed573; }
+  .message.err { color: #ff4757; }
+  .message.dup { color: #ffa502; }
+  .message.hint { color: #a855f7; }
+
+  .win-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    display: none;
+  }
+  .win-overlay.show { display: flex; }
+  .win-text { font-size: 2rem; font-weight: 800; color: #feca57; margin-bottom: 8px; }
+  .win-sub { font-size: 1rem; color: rgba(255,255,255,0.7); margin-bottom: 20px; }
+  .win-score { font-size: 3rem; font-weight: 800; color: #2ed573; }
+
+  .confetti { position: fixed; pointer-events: none; z-index: 100; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="title">UNI<span>WORDS</span></div>
+  <div class="score-box"><span id="foundCount">0</span>/<span id="totalCount">0</span> &nbsp; <b id="scoreEl">0</b> pts</div>
+</div>
+
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+<div class="message" id="msg">&nbsp;</div>
+
+<div class="word-input-area" id="inputArea">
+  <span class="input-letter" id="inputDisplay"></span>
+  <div class="cursor" id="cursorEl"></div>
+</div>
+
+<div class="letters-grid" id="lettersGrid"></div>
+
+<div class="actions">
+  <button class="btn btn-clear" id="clearBtn">&#x232B;</button>
+  <button class="btn btn-submit" id="submitBtn">&#x2713;</button>
+  <button class="btn btn-shuffle" id="shuffleBtn">&#x21C4;</button>
+  <button class="btn btn-hint" id="hintBtn">?</button>
+</div>
+
+<div class="found-section">
+  <div class="found-header" id="foundHeader"></div>
+  <div class="found-words" id="foundWords"></div>
+</div>
+
+<div class="win-overlay" id="winOverlay">
+  <div class="win-text" id="winTitle"></div>
+  <div class="win-sub" id="winSub"></div>
+  <div class="win-score" id="winScore"></div>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+let gameData;
+try {
+  gameData = JSON.parse(decodeURIComponent(escape(atob(params.get('d') || ''))));
+} catch (e) {
+  gameData = { letters: ['W','O','R','D','S','P','L'], words: ['word','words','sword'], bonus: 'words', language: 'en' };
+}
+
+const { letters, words, bonus, language } = gameData;
+const isTR = language === 'tr';
+
+const TEXTS = {
+  found: isTR ? 'Bulunan Kelimeler' : 'Found Words',
+  correct: isTR ? 'Doğru!' : 'Correct!',
+  wrong: isTR ? 'Geçersiz kelime' : 'Not a valid word',
+  duplicate: isTR ? 'Zaten buldun!' : 'Already found!',
+  short: isTR ? 'En az 3 harf gerekli' : 'Minimum 3 letters',
+  bonus_found: isTR ? 'BONUS KELİME!' : 'BONUS WORD!',
+  win: isTR ? 'TEBRİKLER!' : 'AMAZING!',
+  win_sub: isTR ? 'Tüm kelimeleri buldun!' : 'You found all words!',
+  hint_text: isTR ? 'İpucu: ' : 'Hint: ',
+  no_hints: isTR ? 'İpucu kalmadı!' : 'No hints left!',
+};
+
+let currentInput = [];
+let selectedIndices = [];
+let foundList = [];
+let score = 0;
+let hintsUsed = 0;
+const maxHints = 3;
+
+const grid = document.getElementById('lettersGrid');
+const inputDisplay = document.getElementById('inputDisplay');
+const inputArea = document.getElementById('inputArea');
+const msg = document.getElementById('msg');
+const foundWordsEl = document.getElementById('foundWords');
+const foundCountEl = document.getElementById('foundCount');
+const totalCountEl = document.getElementById('totalCount');
+const scoreEl = document.getElementById('scoreEl');
+const progressFill = document.getElementById('progressFill');
+const foundHeader = document.getElementById('foundHeader');
+
+totalCountEl.textContent = words.length;
+foundHeader.textContent = TEXTS.found;
+
+let displayLetters = [...letters];
+
+function renderTiles() {
+  grid.innerHTML = '';
+  displayLetters.forEach((letter, i) => {
+    const tile = document.createElement('div');
+    tile.className = 'letter-tile' + (selectedIndices.includes(i) ? ' selected' : '');
+    tile.textContent = letter;
+    tile.addEventListener('click', () => toggleLetter(i));
+    grid.appendChild(tile);
+  });
+}
+
+function toggleLetter(index) {
+  const pos = selectedIndices.indexOf(index);
+  if (pos > -1) {
+    selectedIndices.splice(pos, 1);
+    currentInput.splice(pos, 1);
+  } else {
+    selectedIndices.push(index);
+    currentInput.push(displayLetters[index]);
+  }
+  updateDisplay();
+  renderTiles();
+}
+
+function updateDisplay() {
+  inputDisplay.textContent = currentInput.join('');
+}
+
+function clearInput() {
+  currentInput = [];
+  selectedIndices = [];
+  updateDisplay();
+  renderTiles();
+}
+
+function showMsg(text, type) {
+  msg.textContent = text;
+  msg.className = 'message ' + type;
+  inputArea.classList.remove('correct', 'wrong', 'duplicate');
+  if (type === 'ok') inputArea.classList.add('correct');
+  else if (type === 'err') inputArea.classList.add('wrong');
+  else if (type === 'dup') inputArea.classList.add('duplicate');
+  setTimeout(() => {
+    msg.innerHTML = '&nbsp;';
+    msg.className = 'message';
+    inputArea.classList.remove('correct', 'wrong', 'duplicate');
+  }, 1500);
+}
+
+function submitWord() {
+  const word = currentInput.join('').toLowerCase();
+
+  if (word.length < 3) {
+    showMsg(TEXTS.short, 'err');
+    clearInput();
+    return;
+  }
+
+  if (foundList.includes(word)) {
+    showMsg(TEXTS.duplicate, 'dup');
+    clearInput();
+    return;
+  }
+
+  if (words.includes(word)) {
+    foundList.push(word);
+    const points = word.length * 10 + (word === bonus ? 50 : 0);
+    score += points;
+
+    const tag = document.createElement('span');
+    tag.className = 'found-word' + (word === bonus ? ' bonus' : '');
+    tag.textContent = word === bonus ? word + ' *' : word;
+    foundWordsEl.appendChild(tag);
+
+    foundCountEl.textContent = foundList.length;
+    scoreEl.textContent = score;
+    progressFill.style.width = (foundList.length / words.length * 100) + '%';
+
+    if (word === bonus) {
+      showMsg(TEXTS.bonus_found + ' +' + points, 'ok');
+    } else {
+      showMsg(TEXTS.correct + ' +' + points, 'ok');
+    }
+
+    if (foundList.length === words.length) {
+      setTimeout(showWin, 600);
+    }
+  } else {
+    showMsg(TEXTS.wrong, 'err');
+  }
+
+  clearInput();
+}
+
+function shuffleLetters() {
+  for (let i = displayLetters.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [displayLetters[i], displayLetters[j]] = [displayLetters[j], displayLetters[i]];
+  }
+  clearInput();
+}
+
+function giveHint() {
+  if (hintsUsed >= maxHints) {
+    showMsg(TEXTS.no_hints, 'err');
+    return;
+  }
+  const remaining = words.filter(w => !foundList.includes(w));
+  if (remaining.length === 0) return;
+  const hintWord = remaining[Math.floor(Math.random() * remaining.length)];
+  const revealed = hintWord.substring(0, 2) + '_'.repeat(hintWord.length - 2);
+  hintsUsed++;
+  showMsg(TEXTS.hint_text + revealed + ` (${hintWord.length})`, 'hint');
+}
+
+function confettiBurst() {
+  const COLORS = ['#ff6b6b','#feca57','#48dbfb','#ff9ff3','#54a0ff','#2ed573','#a855f7'];
+  for (let i = 0; i < 80; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti';
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.top = '-10px';
+    el.style.width = (Math.random() * 8 + 4) + 'px';
+    el.style.height = (Math.random() * 8 + 4) + 'px';
+    el.style.background = COLORS[Math.floor(Math.random() * COLORS.length)];
+    el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    document.body.appendChild(el);
+    const duration = 1500 + Math.random() * 1500;
+    const drift = (Math.random() - 0.5) * 200;
+    el.animate([
+      { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
+      { transform: `translate(${drift}px,${window.innerHeight + 20}px) rotate(${Math.random()*720}deg)`, opacity: 0 }
+    ], { duration, easing: 'cubic-bezier(0.25,0.46,0.45,0.94)' }).onfinish = () => el.remove();
+  }
+}
+
+function showWin() {
+  document.getElementById('winTitle').textContent = TEXTS.win;
+  document.getElementById('winSub').textContent = TEXTS.win_sub;
+  document.getElementById('winScore').textContent = score + ' pts';
+  document.getElementById('winOverlay').classList.add('show');
+  confettiBurst();
+}
+
+document.getElementById('clearBtn').addEventListener('click', clearInput);
+document.getElementById('submitBtn').addEventListener('click', submitWord);
+document.getElementById('shuffleBtn').addEventListener('click', shuffleLetters);
+document.getElementById('hintBtn').addEventListener('click', giveHint);
+
+renderTiles();
+</script>
+</body>
+</html>

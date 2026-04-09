@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head></head>
+<body>
+<script>
+window['ai_edge_gallery_get_result'] = async (dataStr) => {
+    try {
+        const jsonData = JSON.parse(dataStr || '{}');
+        const letters = jsonData.letters || [];
+        const words = jsonData.words || [];
+        const bonus = jsonData.bonus || '';
+        const language = jsonData.language || 'en';
+
+        if (!Array.isArray(letters) || letters.length < 5) {
+            return JSON.stringify({ error: 'Not enough letters provided.' });
+        }
+        if (!Array.isArray(words) || words.length < 5) {
+            return JSON.stringify({ error: 'Not enough valid words provided.' });
+        }
+
+        const payload = JSON.stringify({ letters, words, bonus, language });
+        const encoded = btoa(unescape(encodeURIComponent(payload)));
+        const fullUrl = `webview.html?d=${encoded}&v=${Date.now()}`;
+
+        const langLabel = language === 'tr' ? 'Türkçe' : 'English';
+        return JSON.stringify({
+            webview: { url: fullUrl, aspectRatio: 0.75 },
+            result: `Uniwords (${langLabel}) is ready with ${letters.length} letters and ${words.length} words to find! Tap the preview card to start playing.`
+        });
+    } catch (e) {
+        console.error(e);
+        return JSON.stringify({ error: `Failed: ${e.message}` });
+    }
+};
+</script>
+</body>
+</html>
