@@ -136,7 +136,8 @@ try {
 
 const {title, palette, pixels, size} = D;
 const GRID = size || 16;
-const TRANSPARENT = '#00000000';
+const TRANSPARENT_VALUES = new Set(['#00000000','#0','transparent','','null']);
+function isTransparent(px) { return !px || TRANSPARENT_VALUES.has(px.toLowerCase()); }
 
 document.getElementById('artTitle').textContent = title;
 
@@ -162,7 +163,7 @@ function drawCheckerboard() {
   for (let r = 0; r < GRID; r++) {
     for (let c = 0; c < GRID; c++) {
       const px = pixels[r * GRID + c];
-      if (px === TRANSPARENT || px === 'transparent' || !px) {
+      if (isTransparent(px)) {
         for (let cy = 0; cy < 2; cy++) {
           for (let cx = 0; cx < 2; cx++) {
             ctx.fillStyle = ((cy + cx) % 2 === 0) ? '#2a2a3e' : '#22223a';
@@ -181,7 +182,7 @@ function drawFull() {
   for (let r = 0; r < GRID; r++) {
     for (let c = 0; c < GRID; c++) {
       const px = pixels[r * GRID + c];
-      if (px && px !== TRANSPARENT && px !== 'transparent') {
+      if (!isTransparent(px)) {
         ctx.fillStyle = px;
         ctx.fillRect(c * pixelSize, r * pixelSize, pixelSize, pixelSize);
       }
@@ -232,7 +233,7 @@ function animateDraw() {
       const r = Math.floor(idx / GRID);
       const c = idx % GRID;
       const px = pixels[idx];
-      if (px && px !== TRANSPARENT && px !== 'transparent') {
+      if (!isTransparent(px)) {
         ctx.fillStyle = px;
         ctx.fillRect(c * pixelSize, r * pixelSize, pixelSize, pixelSize);
       }
@@ -250,10 +251,10 @@ function renderPalette() {
   row.innerHTML = '';
   const usedColors = new Set();
   for (const px of pixels) {
-    if (px && px !== TRANSPARENT && px !== 'transparent') usedColors.add(px.toUpperCase());
+    if (!isTransparent(px)) usedColors.add(px.toUpperCase());
   }
   const colors = palette.length > 0
-    ? palette.filter(c => c !== TRANSPARENT && c !== 'transparent')
+    ? palette.filter(c => !isTransparent(c))
     : [...usedColors];
 
   for (const color of colors) {
