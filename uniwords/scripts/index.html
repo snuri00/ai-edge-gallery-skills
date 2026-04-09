@@ -3,29 +3,210 @@
 <head></head>
 <body>
 <script>
+// Crossword placement algorithm
+function buildCrossword(mainWord, puzzleWords) {
+    const allWords = [mainWord, ...puzzleWords];
+    const maxDim = 15;
+    const grid = Array.from({length: maxDim}, () => Array(maxDim).fill(null));
+    const placed = [];
+    const offsetR = Math.floor(maxDim / 2);
+    const offsetC = Math.floor((maxDim - mainWord.length) / 2);
+
+    // Place main word horizontally in the center
+    for (let i = 0; i < mainWord.length; i++) {
+        grid[offsetR][offsetC + i] = mainWord[i].toUpperCase();
+    }
+    placed.push({word: mainWord, row: offsetR, col: offsetC, dir: 'H'});
+
+    // Try to place remaining words
+    const remaining = [...puzzleWords];
+    remaining.sort((a, b) => b.length - a.length); // longer words first
+
+    const notPlaced = [];
+
+    for (const word of remaining) {
+        let bestScore = -1;
+        let bestPos = null;
+
+        for (let wi = 0; wi < word.length; wi++) {
+            const ch = word[wi].toUpperCase();
+            for (let r = 0; r < maxDim; r++) {
+                for (let c = 0; c < maxDim; c++) {
+                    if (grid[r][c] !== ch) continue;
+
+                    // Try vertical placement at this intersection
+                    const startR = r - wi;
+                    if (canPlace(grid, word, startR, c, 'V', placed, maxDim)) {
+                        const score = scorePlace(grid, word, startR, c, 'V', maxDim);
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestPos = {row: startR, col: c, dir: 'V'};
+                        }
+                    }
+
+                    // Try horizontal placement at this intersection
+                    const startC = c - wi;
+                    if (canPlace(grid, word, r, startC, 'H', placed, maxDim)) {
+                        const score = scorePlace(grid, word, r, startC, 'H', maxDim);
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestPos = {row: r, col: startC, dir: 'H'};
+                        }
+                    }
+                }
+            }
+        }
+
+        if (bestPos) {
+            placeWord(grid, word, bestPos.row, bestPos.col, bestPos.dir);
+            placed.push({word, ...bestPos});
+        } else {
+            notPlaced.push(word);
+        }
+    }
+
+    // Trim grid to bounding box
+    let minR = maxDim, maxR = 0, minC = maxDim, maxC = 0;
+    for (let r = 0; r < maxDim; r++) {
+        for (let c = 0; c < maxDim; c++) {
+            if (grid[r][c] !== null) {
+                minR = Math.min(minR, r); maxR = Math.max(maxR, r);
+                minC = Math.min(minC, c); maxC = Math.max(maxC, c);
+            }
+        }
+    }
+
+    const trimmedGrid = [];
+    for (let r = minR; r <= maxR; r++) {
+        const row = [];
+        for (let c = minC; c <= maxC; c++) {
+            row.push(grid[r][c]);
+        }
+        trimmedGrid.push(row);
+    }
+
+    const adjustedPlaced = placed.map(p => ({
+        word: p.word,
+        row: p.row - minR,
+        col: p.col - minC,
+        dir: p.dir
+    }));
+
+    return {
+        grid: trimmedGrid,
+        words: adjustedPlaced,
+        width: maxC - minC + 1,
+        height: maxR - minR + 1,
+        notPlaced
+    };
+}
+
+function canPlace(grid, word, startR, startC, dir, placed, maxDim) {
+    const dR = dir === 'V' ? 1 : 0;
+    const dC = dir === 'H' ? 1 : 0;
+    const endR = startR + dR * (word.length - 1);
+    const endC = startC + dC * (word.length - 1);
+
+    if (startR < 0 || startC < 0 || endR >= maxDim || endC >= maxDim) return false;
+
+    let intersections = 0;
+
+    // Check cell before word start
+    const beforeR = startR - dR;
+    const beforeC = startC - dC;
+    if (beforeR >= 0 && beforeC >= 0 && grid[beforeR][beforeC] !== null) return false;
+
+    // Check cell after word end
+    const afterR = endR + dR;
+    const afterC = endC + dC;
+    if (afterR < maxDim && afterC < maxDim && grid[afterR][afterC] !== null) return false;
+
+    for (let i = 0; i < word.length; i++) {
+        const r = startR + dR * i;
+        const c = startC + dC * i;
+        const ch = word[i].toUpperCase();
+        const existing = grid[r][c];
+
+        if (existing !== null) {
+            if (existing !== ch) return false; // conflict
+            intersections++;
+        } else {
+            // Check parallel neighbors (perpendicular to direction)
+            if (dir === 'H') {
+                if (r > 0 && grid[r-1][c] !== null) return false;
+                if (r < maxDim-1 && grid[r+1][c] !== null) return false;
+            } else {
+                if (c > 0 && grid[r][c-1] !== null) return false;
+                if (c < maxDim-1 && grid[r][c+1] !== null) return false;
+            }
+        }
+    }
+
+    return intersections > 0; // must intersect at least once
+}
+
+function scorePlace(grid, word, startR, startC, dir, maxDim) {
+    const dR = dir === 'V' ? 1 : 0;
+    const dC = dir === 'H' ? 1 : 0;
+    let score = 0;
+    for (let i = 0; i < word.length; i++) {
+        const r = startR + dR * i;
+        const c = startC + dC * i;
+        if (grid[r][c] !== null) score += 10; // intersection bonus
+    }
+    // Prefer center placement
+    const midR = startR + dR * Math.floor(word.length / 2);
+    const midC = startC + dC * Math.floor(word.length / 2);
+    score -= Math.abs(midR - maxDim/2) + Math.abs(midC - maxDim/2);
+    return score;
+}
+
+function placeWord(grid, word, startR, startC, dir) {
+    const dR = dir === 'V' ? 1 : 0;
+    const dC = dir === 'H' ? 1 : 0;
+    for (let i = 0; i < word.length; i++) {
+        grid[startR + dR * i][startC + dC * i] = word[i].toUpperCase();
+    }
+}
+
 window['ai_edge_gallery_get_result'] = async (dataStr) => {
     try {
         const jsonData = JSON.parse(dataStr || '{}');
         const letters = jsonData.letters || [];
-        const words = jsonData.words || [];
-        const bonus = jsonData.bonus || '';
+        const mainWord = (jsonData.mainWord || '').toLowerCase();
+        const puzzleWords = (jsonData.puzzleWords || []).map(w => w.toLowerCase());
+        let bonusWords = (jsonData.bonusWords || []).map(w => w.toLowerCase());
         const language = jsonData.language || 'en';
 
-        if (!Array.isArray(letters) || letters.length < 5) {
-            return JSON.stringify({ error: 'Not enough letters provided.' });
-        }
-        if (!Array.isArray(words) || words.length < 5) {
-            return JSON.stringify({ error: 'Not enough valid words provided.' });
+        if (!mainWord || mainWord.length < 3) {
+            return JSON.stringify({ error: 'Main word must be at least 3 letters.' });
         }
 
-        const payload = JSON.stringify({ letters, words, bonus, language });
+        // Build crossword
+        const crossword = buildCrossword(mainWord, puzzleWords);
+
+        // Move unplaced puzzle words to bonus
+        bonusWords = [...bonusWords, ...crossword.notPlaced];
+        const placedWordsList = crossword.words.map(w => w.word);
+
+        const payload = JSON.stringify({
+            letters,
+            language,
+            grid: crossword.grid,
+            gridWidth: crossword.width,
+            gridHeight: crossword.height,
+            words: crossword.words,
+            placedWords: placedWordsList,
+            bonusWords
+        });
+
         const encoded = btoa(unescape(encodeURIComponent(payload)));
         const fullUrl = `webview.html?d=${encoded}&v=${Date.now()}`;
 
-        const langLabel = language === 'tr' ? 'Türkçe' : 'English';
+        const langLabel = language === 'tr' ? 'Turkce' : 'English';
         return JSON.stringify({
-            webview: { url: fullUrl, aspectRatio: 0.75 },
-            result: `Uniwords (${langLabel}) is ready with ${letters.length} letters and ${words.length} words to find! Tap the preview card to start playing.`
+            webview: { url: fullUrl, aspectRatio: 0.7 },
+            result: `Uniwords (${langLabel}) puzzle is ready with ${placedWordsList.length} words to find! Tap the preview card to start playing.`
         });
     } catch (e) {
         console.error(e);

@@ -2,256 +2,147 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Uniwords</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    background: linear-gradient(135deg, #0a1628, #1a2a4a, #0f2027);
-    color: #fff;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 16px 8px;
-    user-select: none;
-    -webkit-user-select: none;
-  }
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Segoe UI',system-ui,sans-serif;
+  background:linear-gradient(180deg,#0d47a1 0%,#1565c0 30%,#42a5f5 60%,#ff8f00 85%,#ff6f00 100%);
+  min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;
+  padding:12px 8px 8px;
+  user-select:none;-webkit-user-select:none;
+  overflow:hidden;
+  color:#fff;
+}
 
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    max-width: 380px;
-    margin-bottom: 10px;
-  }
-  .title { font-size: 1.3rem; font-weight: 800; letter-spacing: 2px; }
-  .title span { color: #feca57; }
-  .score-box {
-    background: rgba(255,255,255,0.1);
-    border-radius: 12px;
-    padding: 6px 14px;
-    font-size: 0.85rem;
-    font-weight: 600;
-  }
-  .score-box b { color: #feca57; font-size: 1.1rem; }
+/* Header */
+.header{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:360px;margin-bottom:8px}
+.logo{font-size:1.1rem;font-weight:900;letter-spacing:2px}
+.logo span{color:#ffd54f}
+.stats{display:flex;gap:10px;align-items:center}
+.stat{background:rgba(0,0,0,0.25);border-radius:20px;padding:4px 12px;font-size:0.75rem;font-weight:700;display:flex;align-items:center;gap:4px}
+.stat .icon{font-size:0.9rem}
 
-  .progress-bar {
-    width: 100%;
-    max-width: 380px;
-    height: 8px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 4px;
-    margin-bottom: 12px;
-    overflow: hidden;
-  }
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #feca57, #ff6b6b);
-    border-radius: 4px;
-    transition: width 0.4s ease;
-    width: 0%;
-  }
+/* Current word display */
+.word-display{
+  min-height:36px;
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:6px;
+  font-size:1.4rem;font-weight:800;letter-spacing:4px;
+  color:#ffd54f;
+  text-shadow:0 2px 8px rgba(0,0,0,0.3);
+}
 
-  .word-input-area {
-    width: 100%;
-    max-width: 380px;
-    min-height: 52px;
-    background: rgba(255,255,255,0.08);
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 8px 16px;
-    margin-bottom: 12px;
-    gap: 6px;
-    flex-wrap: wrap;
-    border: 2px solid rgba(255,255,255,0.15);
-    transition: border-color 0.2s;
-  }
-  .word-input-area.correct { border-color: #2ed573; animation: flashGreen 0.5s; }
-  .word-input-area.wrong { border-color: #ff4757; animation: shake 0.4s; }
-  .word-input-area.duplicate { border-color: #ffa502; animation: shake 0.4s; }
+/* Crossword */
+.crossword-container{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  width:100%;max-width:360px;
+  margin-bottom:8px;
+  min-height:0;
+}
+.crossword-grid{display:grid;gap:3px}
+.cell{
+  display:flex;align-items:center;justify-content:center;
+  border-radius:4px;
+  font-weight:800;
+  transition:all 0.3s ease;
+}
+.cell.empty{background:transparent}
+.cell.hidden{background:rgba(255,255,255,0.85);box-shadow:0 1px 3px rgba(0,0,0,0.15)}
+.cell.revealed{
+  background:linear-gradient(145deg,#ff8f00,#f57c00);
+  color:#fff;
+  box-shadow:0 2px 6px rgba(255,143,0,0.4);
+  animation:popIn 0.3s cubic-bezier(0.175,0.885,0.32,1.275);
+}
+.cell.hint-revealed{
+  background:linear-gradient(145deg,#7c4dff,#651fff);
+  color:#fff;
+  box-shadow:0 2px 6px rgba(124,77,255,0.4);
+  animation:popIn 0.3s cubic-bezier(0.175,0.885,0.32,1.275);
+}
+@keyframes popIn{0%{transform:scale(0);opacity:0}100%{transform:scale(1);opacity:1}}
 
-  @keyframes flashGreen { 0%,100% { background: rgba(255,255,255,0.08); } 50% { background: rgba(46,213,115,0.2); } }
-  @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+/* Message */
+.message{
+  min-height:20px;font-size:0.8rem;font-weight:700;
+  text-align:center;margin-bottom:4px;
+  text-shadow:0 1px 4px rgba(0,0,0,0.3);
+}
 
-  .input-letter {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #feca57;
-    letter-spacing: 2px;
-  }
-  .cursor {
-    width: 2px;
-    height: 1.5rem;
-    background: #feca57;
-    animation: blink 1s infinite;
-  }
-  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+/* Bonus bar */
+.bonus-bar{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  margin-bottom:6px;min-height:24px;
+}
+.bonus-word{
+  background:rgba(255,213,79,0.2);border:1px solid rgba(255,213,79,0.4);
+  border-radius:12px;padding:2px 10px;font-size:0.7rem;font-weight:700;color:#ffd54f;
+  animation:slideIn 0.3s ease;
+}
+@keyframes slideIn{0%{transform:translateY(-10px);opacity:0}100%{transform:translateY(0);opacity:1}}
 
-  .letters-grid {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 14px;
-    flex-wrap: wrap;
-    justify-content: center;
-    max-width: 380px;
-  }
-  .letter-tile {
-    width: 48px;
-    height: 52px;
-    background: linear-gradient(145deg, #2d3a5c, #1e2a48);
-    border: 2px solid rgba(255,255,255,0.2);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.4rem;
-    font-weight: 800;
-    cursor: pointer;
-    transition: all 0.15s;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-  }
-  .letter-tile:active { transform: scale(0.92); }
-  .letter-tile.selected {
-    background: linear-gradient(145deg, #feca57, #f0932b);
-    color: #1a1a2e;
-    border-color: #feca57;
-    transform: scale(0.92);
-    box-shadow: 0 0 12px rgba(254,202,87,0.4);
-  }
+/* Wheel area */
+.wheel-area{position:relative;width:240px;height:240px;margin-bottom:8px}
+.wheel-canvas{width:240px;height:240px;touch-action:none}
 
-  .actions {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 14px;
-  }
-  .btn {
-    padding: 10px 24px;
-    border: none;
-    border-radius: 50px;
-    font-size: 0.9rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: transform 0.1s;
-    letter-spacing: 0.5px;
-  }
-  .btn:active { transform: scale(0.95); }
-  .btn-submit {
-    background: linear-gradient(135deg, #2ed573, #17c964);
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(46,213,115,0.3);
-  }
-  .btn-clear {
-    background: rgba(255,255,255,0.15);
-    color: #fff;
-  }
-  .btn-shuffle {
-    background: rgba(255,255,255,0.15);
-    color: #fff;
-  }
-  .btn-hint {
-    background: linear-gradient(135deg, #a855f7, #7c3aed);
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(168,85,247,0.3);
-  }
+/* Action buttons */
+.actions{display:flex;gap:12px;align-items:center;justify-content:center;margin-bottom:8px}
+.action-btn{
+  width:44px;height:44px;border-radius:50%;border:none;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;cursor:pointer;
+  transition:transform 0.1s;
+  box-shadow:0 3px 8px rgba(0,0,0,0.25);
+}
+.action-btn:active{transform:scale(0.9)}
+.btn-shuffle{background:linear-gradient(135deg,#26c6da,#00acc1);color:#fff}
+.btn-hint{background:linear-gradient(135deg,#ab47bc,#8e24aa);color:#fff}
+.btn-bonus{background:linear-gradient(135deg,#ffd54f,#ffb300);color:#5d4037;font-weight:800;font-size:0.8rem}
 
-  .found-section {
-    width: 100%;
-    max-width: 380px;
-    flex: 1;
-  }
-  .found-header {
-    font-size: 0.8rem;
-    color: rgba(255,255,255,0.5);
-    margin-bottom: 6px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-  .found-words {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    max-height: 180px;
-    overflow-y: auto;
-  }
-  .found-word {
-    background: rgba(46,213,115,0.15);
-    border: 1px solid rgba(46,213,115,0.3);
-    border-radius: 20px;
-    padding: 4px 12px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: #2ed573;
-  }
-  .found-word.bonus {
-    background: rgba(254,202,87,0.2);
-    border-color: rgba(254,202,87,0.4);
-    color: #feca57;
-  }
+/* Win overlay */
+.win-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.85);
+  display:none;flex-direction:column;align-items:center;justify-content:center;z-index:50;
+}
+.win-overlay.show{display:flex}
+.win-text{font-size:2.2rem;font-weight:900;color:#ffd54f;margin-bottom:8px;text-shadow:0 0 20px rgba(255,213,79,0.5)}
+.win-sub{font-size:1rem;color:rgba(255,255,255,0.7);margin-bottom:16px}
+.win-score{font-size:2.5rem;font-weight:900;color:#69f0ae}
 
-  .message {
-    font-size: 0.85rem;
-    min-height: 1.2rem;
-    margin-bottom: 6px;
-    font-weight: 600;
-    text-align: center;
-  }
-  .message.ok { color: #2ed573; }
-  .message.err { color: #ff4757; }
-  .message.dup { color: #ffa502; }
-  .message.hint { color: #a855f7; }
-
-  .win-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.85);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 50;
-    display: none;
-  }
-  .win-overlay.show { display: flex; }
-  .win-text { font-size: 2rem; font-weight: 800; color: #feca57; margin-bottom: 8px; }
-  .win-sub { font-size: 1rem; color: rgba(255,255,255,0.7); margin-bottom: 20px; }
-  .win-score { font-size: 3rem; font-weight: 800; color: #2ed573; }
-
-  .confetti { position: fixed; pointer-events: none; z-index: 100; }
+.confetti{position:fixed;pointer-events:none;z-index:100}
 </style>
 </head>
 <body>
 
 <div class="header">
-  <div class="title">UNI<span>WORDS</span></div>
-  <div class="score-box"><span id="foundCount">0</span>/<span id="totalCount">0</span> &nbsp; <b id="scoreEl">0</b> pts</div>
+  <div class="logo">UNI<span>WORDS</span></div>
+  <div class="stats">
+    <div class="stat"><span class="icon">&#9733;</span><span id="scoreEl">0</span></div>
+    <div class="stat"><span id="foundCount">0</span>/<span id="totalCount">0</span></div>
+  </div>
 </div>
 
-<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+<div class="word-display" id="wordDisplay">&nbsp;</div>
+
+<div class="crossword-container" id="crosswordContainer">
+  <div class="crossword-grid" id="crosswordGrid"></div>
+</div>
 
 <div class="message" id="msg">&nbsp;</div>
 
-<div class="word-input-area" id="inputArea">
-  <span class="input-letter" id="inputDisplay"></span>
-  <div class="cursor" id="cursorEl"></div>
-</div>
+<div class="bonus-bar" id="bonusBar"></div>
 
-<div class="letters-grid" id="lettersGrid"></div>
+<div class="wheel-area">
+  <canvas id="wheelCanvas" class="wheel-canvas" width="480" height="480"></canvas>
+</div>
 
 <div class="actions">
-  <button class="btn btn-clear" id="clearBtn">&#x232B;</button>
-  <button class="btn btn-submit" id="submitBtn">&#x2713;</button>
-  <button class="btn btn-shuffle" id="shuffleBtn">&#x21C4;</button>
-  <button class="btn btn-hint" id="hintBtn">?</button>
-</div>
-
-<div class="found-section">
-  <div class="found-header" id="foundHeader"></div>
-  <div class="found-words" id="foundWords"></div>
+  <button class="action-btn btn-shuffle" id="shuffleBtn">&#8635;</button>
+  <button class="action-btn btn-hint" id="hintBtn">&#128161;</button>
+  <button class="action-btn btn-bonus" id="bonusBtn">0</button>
 </div>
 
 <div class="win-overlay" id="winOverlay">
@@ -261,203 +152,435 @@
 </div>
 
 <script>
+// ── Parse game data ──
 const params = new URLSearchParams(window.location.search);
-let gameData;
+let G;
 try {
-  gameData = JSON.parse(decodeURIComponent(escape(atob(params.get('d') || ''))));
-} catch (e) {
-  gameData = { letters: ['W','O','R','D','S','P','L'], words: ['word','words','sword'], bonus: 'words', language: 'en' };
+  G = JSON.parse(decodeURIComponent(escape(atob(params.get('d') || ''))));
+} catch(e) {
+  G = {letters:['W','O','R','D','S'],language:'en',grid:[['W','O','R','D','S']],gridWidth:5,gridHeight:1,words:[{word:'words',row:0,col:0,dir:'H'}],placedWords:['words'],bonusWords:['sword']};
 }
 
-const { letters, words, bonus, language } = gameData;
-const isTR = language === 'tr';
-
+const isTR = G.language === 'tr';
 const TEXTS = {
-  found: isTR ? 'Bulunan Kelimeler' : 'Found Words',
-  correct: isTR ? 'Doğru!' : 'Correct!',
-  wrong: isTR ? 'Geçersiz kelime' : 'Not a valid word',
+  correct: isTR ? 'Dogru!' : 'Correct!',
+  wrong: isTR ? 'Gecersiz' : 'Invalid',
   duplicate: isTR ? 'Zaten buldun!' : 'Already found!',
-  short: isTR ? 'En az 3 harf gerekli' : 'Minimum 3 letters',
-  bonus_found: isTR ? 'BONUS KELİME!' : 'BONUS WORD!',
-  win: isTR ? 'TEBRİKLER!' : 'AMAZING!',
-  win_sub: isTR ? 'Tüm kelimeleri buldun!' : 'You found all words!',
-  hint_text: isTR ? 'İpucu: ' : 'Hint: ',
-  no_hints: isTR ? 'İpucu kalmadı!' : 'No hints left!',
+  bonus: isTR ? 'BONUS!' : 'BONUS!',
+  win: isTR ? 'TEBRIKLER!' : 'CONGRATULATIONS!',
+  winSub: isTR ? 'Tum kelimeleri buldun!' : 'All words found!',
 };
 
-let currentInput = [];
-let selectedIndices = [];
-let foundList = [];
-let score = 0;
-let hintsUsed = 0;
-const maxHints = 3;
+// ── Game state ──
+const gridData = G.grid; // 2D array of chars or null
+const gridW = G.gridWidth;
+const gridH = G.gridHeight;
+const wordPlacements = G.words; // [{word, row, col, dir}]
+const placedWords = G.placedWords.map(w => w.toLowerCase());
+const bonusWords = (G.bonusWords || []).map(w => w.toLowerCase());
+let letters = [...G.letters];
 
-const grid = document.getElementById('lettersGrid');
-const inputDisplay = document.getElementById('inputDisplay');
-const inputArea = document.getElementById('inputArea');
-const msg = document.getElementById('msg');
-const foundWordsEl = document.getElementById('foundWords');
+const revealedCells = Array.from({length: gridH}, () => Array(gridW).fill(false));
+const foundWords = new Set();
+const foundBonusWords = new Set();
+let score = 0;
+let hints = 3;
+let currentSelection = []; // indices of selected letters in the wheel
+let isSelecting = false;
+
+// ── Elements ──
+const crosswordGrid = document.getElementById('crosswordGrid');
+const wordDisplay = document.getElementById('wordDisplay');
+const msgEl = document.getElementById('msg');
+const scoreEl = document.getElementById('scoreEl');
 const foundCountEl = document.getElementById('foundCount');
 const totalCountEl = document.getElementById('totalCount');
-const scoreEl = document.getElementById('scoreEl');
-const progressFill = document.getElementById('progressFill');
-const foundHeader = document.getElementById('foundHeader');
+const bonusBar = document.getElementById('bonusBar');
+const bonusBtn = document.getElementById('bonusBtn');
+const canvas = document.getElementById('wheelCanvas');
+const ctx = canvas.getContext('2d');
 
-totalCountEl.textContent = words.length;
-foundHeader.textContent = TEXTS.found;
+totalCountEl.textContent = placedWords.length;
 
-let displayLetters = [...letters];
+// ── Crossword Grid ──
+function renderCrossword() {
+  const container = document.getElementById('crosswordContainer');
+  const maxW = container.clientWidth - 16;
+  const maxH = container.clientHeight - 8;
+  const cellSize = Math.min(Math.floor(maxW / gridW), Math.floor(maxH / gridH), 42);
+  const fontSize = Math.max(10, cellSize * 0.55);
 
-function renderTiles() {
-  grid.innerHTML = '';
-  displayLetters.forEach((letter, i) => {
-    const tile = document.createElement('div');
-    tile.className = 'letter-tile' + (selectedIndices.includes(i) ? ' selected' : '');
-    tile.textContent = letter;
-    tile.addEventListener('click', () => toggleLetter(i));
-    grid.appendChild(tile);
-  });
-}
+  crosswordGrid.style.gridTemplateColumns = `repeat(${gridW}, ${cellSize}px)`;
+  crosswordGrid.style.gridTemplateRows = `repeat(${gridH}, ${cellSize}px)`;
+  crosswordGrid.innerHTML = '';
 
-function toggleLetter(index) {
-  const pos = selectedIndices.indexOf(index);
-  if (pos > -1) {
-    selectedIndices.splice(pos, 1);
-    currentInput.splice(pos, 1);
-  } else {
-    selectedIndices.push(index);
-    currentInput.push(displayLetters[index]);
+  for (let r = 0; r < gridH; r++) {
+    for (let c = 0; c < gridW; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.style.fontSize = fontSize + 'px';
+      cell.dataset.r = r;
+      cell.dataset.c = c;
+
+      if (gridData[r][c] === null) {
+        cell.classList.add('empty');
+      } else if (revealedCells[r][c]) {
+        cell.classList.add('revealed');
+        cell.textContent = gridData[r][c];
+      } else {
+        cell.classList.add('hidden');
+      }
+      crosswordGrid.appendChild(cell);
+    }
   }
-  updateDisplay();
-  renderTiles();
 }
 
-function updateDisplay() {
-  inputDisplay.textContent = currentInput.join('');
+function revealWord(wordObj) {
+  const {word, row, col, dir} = wordObj;
+  const dR = dir === 'V' ? 1 : 0;
+  const dC = dir === 'H' ? 1 : 0;
+
+  for (let i = 0; i < word.length; i++) {
+    const r = row + dR * i;
+    const c = col + dC * i;
+    if (!revealedCells[r][c]) {
+      revealedCells[r][c] = true;
+      // Animate with delay
+      setTimeout(() => {
+        const cellEl = crosswordGrid.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+        if (cellEl) {
+          cellEl.className = 'cell revealed';
+          cellEl.style.fontSize = cellEl.style.fontSize; // keep
+          cellEl.textContent = gridData[r][c];
+        }
+      }, i * 80);
+    }
+  }
 }
 
-function clearInput() {
-  currentInput = [];
-  selectedIndices = [];
-  updateDisplay();
-  renderTiles();
+function revealHintCell() {
+  // Find a random unrevealed cell that has a letter
+  const candidates = [];
+  for (let r = 0; r < gridH; r++) {
+    for (let c = 0; c < gridW; c++) {
+      if (gridData[r][c] !== null && !revealedCells[r][c]) {
+        candidates.push({r, c});
+      }
+    }
+  }
+  if (candidates.length === 0) return;
+  const pick = candidates[Math.floor(Math.random() * candidates.length)];
+  revealedCells[pick.r][pick.c] = true;
+  const cellEl = crosswordGrid.querySelector(`[data-r="${pick.r}"][data-c="${pick.c}"]`);
+  if (cellEl) {
+    cellEl.className = 'cell hint-revealed';
+    cellEl.textContent = gridData[pick.r][pick.c];
+  }
 }
 
-function showMsg(text, type) {
-  msg.textContent = text;
-  msg.className = 'message ' + type;
-  inputArea.classList.remove('correct', 'wrong', 'duplicate');
-  if (type === 'ok') inputArea.classList.add('correct');
-  else if (type === 'err') inputArea.classList.add('wrong');
-  else if (type === 'dup') inputArea.classList.add('duplicate');
-  setTimeout(() => {
-    msg.innerHTML = '&nbsp;';
-    msg.className = 'message';
-    inputArea.classList.remove('correct', 'wrong', 'duplicate');
-  }, 1500);
+// ── Letter Wheel ──
+const CW = canvas.width;
+const CH = canvas.height;
+const CENTER_X = CW / 2;
+const CENTER_Y = CH / 2;
+const WHEEL_R = 160;
+const LETTER_R = 32;
+
+let letterPositions = []; // [{x, y, letter, index}]
+
+function calcLetterPositions() {
+  letterPositions = [];
+  const n = letters.length;
+  for (let i = 0; i < n; i++) {
+    const angle = -Math.PI / 2 + (2 * Math.PI * i) / n;
+    letterPositions.push({
+      x: CENTER_X + WHEEL_R * Math.cos(angle),
+      y: CENTER_Y + WHEEL_R * Math.sin(angle),
+      letter: letters[i],
+      index: i
+    });
+  }
 }
 
+function drawWheel() {
+  ctx.clearRect(0, 0, CW, CH);
+
+  // Background circle
+  ctx.beginPath();
+  ctx.arc(CENTER_X, CENTER_Y, WHEEL_R + 50, 0, 2 * Math.PI);
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.fill();
+
+  // Selection lines
+  if (currentSelection.length > 1) {
+    ctx.beginPath();
+    ctx.strokeStyle = '#ffd54f';
+    ctx.lineWidth = 8;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    const first = letterPositions[currentSelection[0]];
+    ctx.moveTo(first.x, first.y);
+    for (let i = 1; i < currentSelection.length; i++) {
+      const p = letterPositions[currentSelection[i]];
+      ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+  }
+
+  // Draw line to current touch position if selecting
+  if (isSelecting && currentSelection.length > 0 && lastTouchPos) {
+    const last = letterPositions[currentSelection[currentSelection.length - 1]];
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(255,213,79,0.4)';
+    ctx.lineWidth = 6;
+    ctx.lineCap = 'round';
+    ctx.moveTo(last.x, last.y);
+    ctx.lineTo(lastTouchPos.x, lastTouchPos.y);
+    ctx.stroke();
+  }
+
+  // Letters
+  for (const lp of letterPositions) {
+    const isSelected = currentSelection.includes(lp.index);
+    const r = isSelected ? LETTER_R + 4 : LETTER_R;
+
+    // Circle
+    ctx.beginPath();
+    ctx.arc(lp.x, lp.y, r, 0, 2 * Math.PI);
+    if (isSelected) {
+      ctx.fillStyle = '#ffd54f';
+      ctx.shadowColor = 'rgba(255,213,79,0.6)';
+      ctx.shadowBlur = 12;
+    } else {
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+    }
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Letter text
+    ctx.fillStyle = isSelected ? '#3e2723' : '#fff';
+    ctx.font = `bold ${isSelected ? 34 : 30}px 'Segoe UI', sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(lp.letter, lp.x, lp.y + 1);
+  }
+}
+
+let lastTouchPos = null;
+
+function getCanvasPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = CW / rect.width;
+  const scaleY = CH / rect.height;
+  const touch = e.touches ? e.touches[0] : e;
+  return {
+    x: (touch.clientX - rect.left) * scaleX,
+    y: (touch.clientY - rect.top) * scaleY
+  };
+}
+
+function getLetterAtPos(pos) {
+  for (const lp of letterPositions) {
+    const dx = pos.x - lp.x;
+    const dy = pos.y - lp.y;
+    if (dx * dx + dy * dy < (LETTER_R + 10) * (LETTER_R + 10)) {
+      return lp.index;
+    }
+  }
+  return -1;
+}
+
+function onPointerStart(e) {
+  e.preventDefault();
+  const pos = getCanvasPos(e);
+  lastTouchPos = pos;
+  const idx = getLetterAtPos(pos);
+  if (idx >= 0) {
+    isSelecting = true;
+    currentSelection = [idx];
+    updateWordDisplay();
+    drawWheel();
+  }
+}
+
+function onPointerMove(e) {
+  e.preventDefault();
+  if (!isSelecting) return;
+  const pos = getCanvasPos(e);
+  lastTouchPos = pos;
+  const idx = getLetterAtPos(pos);
+  if (idx >= 0 && !currentSelection.includes(idx)) {
+    currentSelection.push(idx);
+    updateWordDisplay();
+  }
+  drawWheel();
+}
+
+function onPointerEnd(e) {
+  e.preventDefault();
+  if (!isSelecting) return;
+  isSelecting = false;
+  lastTouchPos = null;
+  submitWord();
+  currentSelection = [];
+  updateWordDisplay();
+  drawWheel();
+}
+
+canvas.addEventListener('touchstart', onPointerStart, {passive: false});
+canvas.addEventListener('touchmove', onPointerMove, {passive: false});
+canvas.addEventListener('touchend', onPointerEnd, {passive: false});
+canvas.addEventListener('mousedown', onPointerStart);
+canvas.addEventListener('mousemove', onPointerMove);
+canvas.addEventListener('mouseup', onPointerEnd);
+canvas.addEventListener('mouseleave', onPointerEnd);
+
+function updateWordDisplay() {
+  const word = currentSelection.map(i => letters[i]).join('');
+  wordDisplay.textContent = word || '\u00a0';
+}
+
+// ── Game Logic ──
 function submitWord() {
-  const word = currentInput.join('').toLowerCase();
+  const word = currentSelection.map(i => letters[i]).join('').toLowerCase();
+  if (word.length < 2) return;
 
-  if (word.length < 3) {
-    showMsg(TEXTS.short, 'err');
-    clearInput();
+  // Check placed words
+  if (placedWords.includes(word)) {
+    if (foundWords.has(word)) {
+      showMsg(TEXTS.duplicate, '#ffa726');
+      return;
+    }
+    foundWords.add(word);
+    const points = word.length * 10;
+    score += points;
+
+    // Reveal in crossword
+    const wp = wordPlacements.find(w => w.word.toLowerCase() === word);
+    if (wp) revealWord(wp);
+
+    showMsg(TEXTS.correct + ' +' + points, '#69f0ae');
+    updateStats();
+
+    if (foundWords.size === placedWords.length) {
+      setTimeout(showWin, 800);
+    }
     return;
   }
 
-  if (foundList.includes(word)) {
-    showMsg(TEXTS.duplicate, 'dup');
-    clearInput();
-    return;
-  }
-
-  if (words.includes(word)) {
-    foundList.push(word);
-    const points = word.length * 10 + (word === bonus ? 50 : 0);
+  // Check bonus words
+  if (bonusWords.includes(word)) {
+    if (foundBonusWords.has(word)) {
+      showMsg(TEXTS.duplicate, '#ffa726');
+      return;
+    }
+    foundBonusWords.add(word);
+    const points = word.length * 5;
     score += points;
 
     const tag = document.createElement('span');
-    tag.className = 'found-word' + (word === bonus ? ' bonus' : '');
-    tag.textContent = word === bonus ? word + ' *' : word;
-    foundWordsEl.appendChild(tag);
+    tag.className = 'bonus-word';
+    tag.textContent = word;
+    bonusBar.appendChild(tag);
+    bonusBtn.textContent = foundBonusWords.size;
 
-    foundCountEl.textContent = foundList.length;
-    scoreEl.textContent = score;
-    progressFill.style.width = (foundList.length / words.length * 100) + '%';
-
-    if (word === bonus) {
-      showMsg(TEXTS.bonus_found + ' +' + points, 'ok');
-    } else {
-      showMsg(TEXTS.correct + ' +' + points, 'ok');
-    }
-
-    if (foundList.length === words.length) {
-      setTimeout(showWin, 600);
-    }
-  } else {
-    showMsg(TEXTS.wrong, 'err');
-  }
-
-  clearInput();
-}
-
-function shuffleLetters() {
-  for (let i = displayLetters.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [displayLetters[i], displayLetters[j]] = [displayLetters[j], displayLetters[i]];
-  }
-  clearInput();
-}
-
-function giveHint() {
-  if (hintsUsed >= maxHints) {
-    showMsg(TEXTS.no_hints, 'err');
+    showMsg(TEXTS.bonus + ' +' + points, '#ffd54f');
+    updateStats();
     return;
   }
-  const remaining = words.filter(w => !foundList.includes(w));
-  if (remaining.length === 0) return;
-  const hintWord = remaining[Math.floor(Math.random() * remaining.length)];
-  const revealed = hintWord.substring(0, 2) + '_'.repeat(hintWord.length - 2);
-  hintsUsed++;
-  showMsg(TEXTS.hint_text + revealed + ` (${hintWord.length})`, 'hint');
+
+  showMsg(TEXTS.wrong, '#ef5350');
 }
 
-function confettiBurst() {
-  const COLORS = ['#ff6b6b','#feca57','#48dbfb','#ff9ff3','#54a0ff','#2ed573','#a855f7'];
-  for (let i = 0; i < 80; i++) {
-    const el = document.createElement('div');
-    el.className = 'confetti';
-    el.style.left = Math.random() * 100 + 'vw';
-    el.style.top = '-10px';
-    el.style.width = (Math.random() * 8 + 4) + 'px';
-    el.style.height = (Math.random() * 8 + 4) + 'px';
-    el.style.background = COLORS[Math.floor(Math.random() * COLORS.length)];
-    el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
-    document.body.appendChild(el);
-    const duration = 1500 + Math.random() * 1500;
-    const drift = (Math.random() - 0.5) * 200;
-    el.animate([
-      { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
-      { transform: `translate(${drift}px,${window.innerHeight + 20}px) rotate(${Math.random()*720}deg)`, opacity: 0 }
-    ], { duration, easing: 'cubic-bezier(0.25,0.46,0.45,0.94)' }).onfinish = () => el.remove();
+function updateStats() {
+  scoreEl.textContent = score;
+  foundCountEl.textContent = foundWords.size;
+}
+
+function showMsg(text, color) {
+  msgEl.textContent = text;
+  msgEl.style.color = color || '#fff';
+  setTimeout(() => { msgEl.innerHTML = '\u00a0'; }, 1200);
+}
+
+// ── Shuffle ──
+document.getElementById('shuffleBtn').addEventListener('click', () => {
+  for (let i = letters.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [letters[i], letters[j]] = [letters[j], letters[i]];
   }
-}
+  calcLetterPositions();
+  drawWheel();
+});
 
+// ── Hint ──
+document.getElementById('hintBtn').addEventListener('click', () => {
+  if (hints <= 0) {
+    showMsg(isTR ? 'Ipucu kalmadi!' : 'No hints left!', '#ef5350');
+    return;
+  }
+  hints--;
+  revealHintCell();
+
+  // Check if any word is now fully revealed
+  for (const wp of wordPlacements) {
+    if (foundWords.has(wp.word.toLowerCase())) continue;
+    const {word, row, col, dir} = wp;
+    const dR = dir === 'V' ? 1 : 0;
+    const dC = dir === 'H' ? 1 : 0;
+    let allRevealed = true;
+    for (let i = 0; i < word.length; i++) {
+      if (!revealedCells[row + dR * i][col + dC * i]) { allRevealed = false; break; }
+    }
+    if (allRevealed) {
+      foundWords.add(word.toLowerCase());
+      updateStats();
+      if (foundWords.size === placedWords.length) setTimeout(showWin, 800);
+    }
+  }
+});
+
+// ── Bonus btn (just visual) ──
+document.getElementById('bonusBtn').addEventListener('click', () => {
+  showMsg(isTR ? `${foundBonusWords.size} bonus kelime` : `${foundBonusWords.size} bonus words`, '#ffd54f');
+});
+
+// ── Win ──
 function showWin() {
   document.getElementById('winTitle').textContent = TEXTS.win;
-  document.getElementById('winSub').textContent = TEXTS.win_sub;
+  document.getElementById('winSub').textContent = TEXTS.winSub;
   document.getElementById('winScore').textContent = score + ' pts';
   document.getElementById('winOverlay').classList.add('show');
   confettiBurst();
 }
 
-document.getElementById('clearBtn').addEventListener('click', clearInput);
-document.getElementById('submitBtn').addEventListener('click', submitWord);
-document.getElementById('shuffleBtn').addEventListener('click', shuffleLetters);
-document.getElementById('hintBtn').addEventListener('click', giveHint);
+function confettiBurst() {
+  const COLORS = ['#ff6b6b','#ffd54f','#48dbfb','#ff9ff3','#54a0ff','#69f0ae','#ab47bc'];
+  for (let i = 0; i < 80; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti';
+    el.style.left = Math.random()*100+'vw';
+    el.style.top = '-10px';
+    el.style.width = (Math.random()*8+4)+'px';
+    el.style.height = (Math.random()*8+4)+'px';
+    el.style.background = COLORS[Math.floor(Math.random()*COLORS.length)];
+    el.style.borderRadius = Math.random()>0.5?'50%':'2px';
+    document.body.appendChild(el);
+    const dur = 1500+Math.random()*1500;
+    const drift = (Math.random()-0.5)*200;
+    el.animate([
+      {transform:'translate(0,0) rotate(0deg)',opacity:1},
+      {transform:`translate(${drift}px,${window.innerHeight+20}px) rotate(${Math.random()*720}deg)`,opacity:0}
+    ],{duration:dur,easing:'cubic-bezier(0.25,0.46,0.45,0.94)'}).onfinish=()=>el.remove();
+  }
+}
 
-renderTiles();
+// ── Init ──
+calcLetterPositions();
+renderCrossword();
+drawWheel();
 </script>
 </body>
 </html>
