@@ -7,16 +7,35 @@ window['ai_edge_gallery_get_result'] = async (dataStr) => {
     try {
         const jsonData = JSON.parse(dataStr || '{}');
         const title = jsonData.title || 'Pixel Art';
-        const palette = jsonData.palette || [];
-        const pixels = jsonData.pixels || [];
+        const colors = jsonData.colors || {};
+        const rows = jsonData.rows || [];
 
-        if (!Array.isArray(pixels) || pixels.length < 16) {
-            return JSON.stringify({ error: 'Not enough pixel data provided.' });
+        if (!Array.isArray(rows) || rows.length === 0) {
+            return JSON.stringify({ error: 'No row data provided.' });
         }
 
-        // Determine grid size from pixel count
-        const total = pixels.length;
-        const size = Math.round(Math.sqrt(total));
+        const size = rows.length;
+
+        // Convert character matrix to pixel array
+        const pixels = [];
+        const palette = [];
+        const paletteSet = new Set();
+
+        for (const row of rows) {
+            for (let i = 0; i < size; i++) {
+                const ch = i < row.length ? row[i] : '.';
+                const color = colors[ch] || '';
+                if (ch === '.' || !color) {
+                    pixels.push('#0');
+                } else {
+                    pixels.push(color);
+                    if (!paletteSet.has(color)) {
+                        paletteSet.add(color);
+                        palette.push(color);
+                    }
+                }
+            }
+        }
 
         const payload = JSON.stringify({ title, palette, pixels, size });
         const encoded = btoa(unescape(encodeURIComponent(payload)));
