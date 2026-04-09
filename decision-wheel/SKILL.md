@@ -2,7 +2,7 @@
 name: decision-wheel
 description: Spin a colorful wheel to randomly pick from a list of options for any decision.
 metadata:
-  homepage: https://github.com/anthropics/ai-edge-gallery-skills
+  homepage: https://github.com/snuri00/ai-edge-gallery-skills
 ---
 
 # Decision Wheel
