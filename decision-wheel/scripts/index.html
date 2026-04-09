@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head></head>
+<body>
+<script>
+window['ai_edge_gallery_get_result'] = async (dataStr) => {
+    try {
+        const jsonData = JSON.parse(dataStr || '{}');
+        const options = jsonData.options || [];
+        const title = jsonData.title || 'Decision';
+
+        if (!Array.isArray(options) || options.length < 2) {
+            return JSON.stringify({
+                error: 'Please provide at least 2 options to spin the wheel.'
+            });
+        }
+
+        if (options.length > 12) {
+            return JSON.stringify({
+                error: 'Maximum 12 options allowed. Please reduce your choices.'
+            });
+        }
+
+        const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(options))));
+        const encodedTitle = encodeURIComponent(title);
+        const fullUrl = `webview.html?title=${encodedTitle}&data=${encoded}&v=${Date.now()}`;
+
+        return JSON.stringify({
+            webview: {
+                url: fullUrl,
+                aspectRatio: 1.0
+            },
+            result: `Here is your "${title}" decision wheel with ${options.length} options. Tap the preview card to spin the wheel!`
+        });
+    } catch (e) {
+        console.error(e);
+        return JSON.stringify({
+            error: `Failed to create wheel: ${e.message}`
+        });
+    }
+};
+</script>
+</body>
+</html>

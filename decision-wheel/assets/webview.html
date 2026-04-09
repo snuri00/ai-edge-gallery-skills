@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Decision Wheel</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: hidden;
+    color: #fff;
+  }
+  h1 {
+    font-size: 1.4rem;
+    margin-bottom: 16px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    letter-spacing: 0.5px;
+  }
+  .wheel-container {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    margin-bottom: 20px;
+  }
+  canvas {
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    box-shadow: 0 0 30px rgba(100, 100, 255, 0.3), 0 0 60px rgba(100, 100, 255, 0.1);
+  }
+  .pointer {
+    position: absolute;
+    top: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 16px solid transparent;
+    border-right: 16px solid transparent;
+    border-top: 30px solid #ff4757;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    z-index: 10;
+  }
+  .center-dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    z-index: 5;
+  }
+  #spinBtn {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border: none;
+    color: #fff;
+    padding: 14px 48px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 50px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  #spinBtn:hover { transform: scale(1.05); box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6); }
+  #spinBtn:active { transform: scale(0.97); }
+  #spinBtn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  #result {
+    margin-top: 16px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    min-height: 2rem;
+    text-align: center;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .confetti { position: fixed; pointer-events: none; z-index: 100; }
+</style>
+</head>
+<body>
+
+<h1 id="titleEl"></h1>
+<div class="wheel-container">
+  <div class="pointer"></div>
+  <canvas id="wheel" width="600" height="600"></canvas>
+  <div class="center-dot"></div>
+</div>
+<button id="spinBtn">SPIN</button>
+<div id="result"></div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const title = params.get('title') || 'Decision';
+const raw = params.get('data') || '';
+let options;
+try {
+  options = JSON.parse(decodeURIComponent(escape(atob(raw))));
+} catch (e) {
+  options = ['Option A', 'Option B'];
+}
+
+document.getElementById('titleEl').textContent = title;
+
+const COLORS = [
+  '#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff',
+  '#5f27cd', '#01a3a4', '#f368e0', '#ff6348', '#2ed573',
+  '#1e90ff', '#ffa502'
+];
+
+const canvas = document.getElementById('wheel');
+const ctx = canvas.getContext('2d');
+const W = canvas.width;
+const H = canvas.height;
+const CX = W / 2;
+const CY = H / 2;
+const R = W / 2 - 10;
+const segAngle = (2 * Math.PI) / options.length;
+
+let currentAngle = 0;
+let spinning = false;
+
+function drawWheel(rotation) {
+  ctx.clearRect(0, 0, W, H);
+  for (let i = 0; i < options.length; i++) {
+    const startAngle = rotation + i * segAngle;
+    const endAngle = startAngle + segAngle;
+
+    // Segment
+    ctx.beginPath();
+    ctx.moveTo(CX, CY);
+    ctx.arc(CX, CY, R, startAngle, endAngle);
+    ctx.closePath();
+    ctx.fillStyle = COLORS[i % COLORS.length];
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Label
+    ctx.save();
+    ctx.translate(CX, CY);
+    ctx.rotate(startAngle + segAngle / 2);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${Math.min(28, Math.floor(200 / options.length))}px 'Segoe UI', sans-serif`;
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 4;
+    const label = options[i].length > 14 ? options[i].substring(0, 13) + '...' : options[i];
+    ctx.fillText(label, R - 18, 6);
+    ctx.restore();
+  }
+
+  // Outer ring
+  ctx.beginPath();
+  ctx.arc(CX, CY, R, 0, 2 * Math.PI);
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 6;
+  ctx.stroke();
+}
+
+drawWheel(0);
+
+function getWinnerIndex(angle) {
+  // Pointer is at top (270 degrees / -PI/2)
+  const pointerAngle = -Math.PI / 2;
+  let normalizedAngle = (pointerAngle - angle) % (2 * Math.PI);
+  if (normalizedAngle < 0) normalizedAngle += 2 * Math.PI;
+  return Math.floor(normalizedAngle / segAngle) % options.length;
+}
+
+function confettiBurst() {
+  for (let i = 0; i < 60; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti';
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.top = '-10px';
+    el.style.width = (Math.random() * 8 + 4) + 'px';
+    el.style.height = (Math.random() * 8 + 4) + 'px';
+    el.style.background = COLORS[Math.floor(Math.random() * COLORS.length)];
+    el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    el.style.opacity = '1';
+    document.body.appendChild(el);
+
+    const duration = 1500 + Math.random() * 1500;
+    const drift = (Math.random() - 0.5) * 200;
+    el.animate([
+      { transform: `translate(0, 0) rotate(0deg)`, opacity: 1 },
+      { transform: `translate(${drift}px, ${window.innerHeight + 20}px) rotate(${Math.random() * 720}deg)`, opacity: 0 }
+    ], { duration, easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)' }).onfinish = () => el.remove();
+  }
+}
+
+document.getElementById('spinBtn').addEventListener('click', () => {
+  if (spinning) return;
+  spinning = true;
+  document.getElementById('spinBtn').disabled = true;
+  document.getElementById('result').textContent = '';
+
+  const totalRotation = Math.PI * 2 * (5 + Math.random() * 5) + Math.random() * Math.PI * 2;
+  const duration = 4000;
+  const startTime = performance.now();
+  const startAngle = currentAngle;
+
+  function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+  function animate(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = easeOutCubic(progress);
+
+    currentAngle = startAngle + totalRotation * eased;
+    drawWheel(currentAngle);
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      spinning = false;
+      document.getElementById('spinBtn').disabled = false;
+      const winner = getWinnerIndex(currentAngle);
+      document.getElementById('result').textContent = options[winner];
+      confettiBurst();
+    }
+  }
+  requestAnimationFrame(animate);
+});
+</script>
+</body>
+</html>
