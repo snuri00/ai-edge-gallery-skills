@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head></head>
+<body>
+<script>
+window['ai_edge_gallery_get_result'] = async (dataStr) => {
+    try {
+        const jsonData = JSON.parse(dataStr || '{}');
+        const title = jsonData.title || 'Pixel Art';
+        const palette = jsonData.palette || [];
+        const pixels = jsonData.pixels || [];
+
+        if (!Array.isArray(pixels) || pixels.length < 16) {
+            return JSON.stringify({ error: 'Not enough pixel data provided.' });
+        }
+
+        // Determine grid size from pixel count
+        const total = pixels.length;
+        const size = Math.round(Math.sqrt(total));
+
+        const payload = JSON.stringify({ title, palette, pixels, size });
+        const encoded = btoa(unescape(encodeURIComponent(payload)));
+        const fullUrl = `webview.html?d=${encoded}&v=${Date.now()}`;
+
+        return JSON.stringify({
+            webview: { url: fullUrl, aspectRatio: 0.85 },
+            result: `Pixel art "${title}" is ready! Tap the preview card to view it.`
+        });
+    } catch (e) {
+        console.error(e);
+        return JSON.stringify({ error: `Failed: ${e.message}` });
+    }
+};
+</script>
+</body>
+</html>

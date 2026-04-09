@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Pixel Portrait</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Segoe UI',system-ui,sans-serif;
+  background:#1a1a2e;
+  min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;
+  padding:16px 12px;
+  user-select:none;-webkit-user-select:none;
+  color:#fff;
+}
+
+.header{
+  width:100%;max-width:360px;
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:12px;
+}
+.title{font-size:1.2rem;font-weight:800;letter-spacing:1px}
+.title span{color:#e040fb}
+.subtitle{font-size:0.85rem;color:rgba(255,255,255,0.6);font-weight:600}
+
+/* Canvas area */
+.canvas-wrap{
+  position:relative;
+  background:#16213e;
+  border-radius:16px;
+  padding:12px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05);
+  margin-bottom:14px;
+}
+canvas{
+  display:block;
+  border-radius:4px;
+  image-rendering:pixelated;
+  image-rendering:crisp-edges;
+}
+
+/* Controls */
+.controls{
+  display:flex;gap:10px;align-items:center;justify-content:center;
+  margin-bottom:14px;flex-wrap:wrap;
+}
+.ctrl-btn{
+  padding:8px 18px;border:none;border-radius:25px;
+  font-size:0.8rem;font-weight:700;cursor:pointer;
+  transition:transform 0.1s,opacity 0.2s;
+  box-shadow:0 3px 8px rgba(0,0,0,0.3);
+}
+.ctrl-btn:active{transform:scale(0.93)}
+.btn-draw{background:linear-gradient(135deg,#e040fb,#7c4dff);color:#fff}
+.btn-grid{background:rgba(255,255,255,0.12);color:#fff}
+.btn-grid.active{background:rgba(255,255,255,0.25)}
+.btn-zoom{background:rgba(255,255,255,0.12);color:#fff}
+
+/* Palette */
+.palette-section{
+  width:100%;max-width:360px;
+}
+.palette-label{
+  font-size:0.7rem;color:rgba(255,255,255,0.4);
+  text-transform:uppercase;letter-spacing:1px;
+  margin-bottom:6px;
+}
+.palette-row{
+  display:flex;gap:6px;flex-wrap:wrap;
+}
+.palette-swatch{
+  width:28px;height:28px;border-radius:6px;
+  border:2px solid rgba(255,255,255,0.15);
+  transition:transform 0.15s;
+  cursor:pointer;
+  position:relative;
+}
+.palette-swatch:hover{transform:scale(1.2)}
+.palette-swatch .tooltip{
+  display:none;position:absolute;bottom:110%;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,0.85);color:#fff;padding:2px 8px;border-radius:4px;
+  font-size:0.65rem;white-space:nowrap;
+}
+.palette-swatch:hover .tooltip{display:block}
+
+/* Progress */
+.progress{
+  width:100%;max-width:360px;
+  height:4px;background:rgba(255,255,255,0.08);
+  border-radius:2px;margin-bottom:14px;overflow:hidden;
+}
+.progress-fill{
+  height:100%;width:0%;
+  background:linear-gradient(90deg,#e040fb,#7c4dff);
+  border-radius:2px;transition:width 0.05s linear;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="title">PIXEL<span>PORTRAIT</span></div>
+    <div class="subtitle" id="artTitle"></div>
+  </div>
+</div>
+
+<div class="progress" id="progressWrap"><div class="progress-fill" id="progressFill"></div></div>
+
+<div class="canvas-wrap">
+  <canvas id="artCanvas"></canvas>
+</div>
+
+<div class="controls">
+  <button class="ctrl-btn btn-draw" id="replayBtn">&#9654; Replay</button>
+  <button class="ctrl-btn btn-grid" id="gridBtn">Grid</button>
+  <button class="ctrl-btn btn-zoom" id="zoomBtn">2x</button>
+</div>
+
+<div class="palette-section">
+  <div class="palette-label">Palette</div>
+  <div class="palette-row" id="paletteRow"></div>
+</div>
+
+<script>
+// ── Parse data ──
+const params = new URLSearchParams(window.location.search);
+let D;
+try {
+  D = JSON.parse(decodeURIComponent(escape(atob(params.get('d') || ''))));
+} catch(e) {
+  D = {title:'Demo',palette:['#e53935','#000000'],pixels:Array(256).fill('#e53935'),size:16};
+}
+
+const {title, palette, pixels, size} = D;
+const GRID = size || 16;
+const TRANSPARENT = '#00000000';
+
+document.getElementById('artTitle').textContent = title;
+
+// ── Canvas setup ──
+const canvas = document.getElementById('artCanvas');
+const ctx = canvas.getContext('2d');
+let pixelSize = 16;
+let zoom = 1;
+let showGrid = false;
+
+function calcSize() {
+  const maxW = Math.min(window.innerWidth - 56, 340);
+  pixelSize = Math.floor(maxW / GRID / zoom) * zoom;
+  canvas.width = GRID * pixelSize;
+  canvas.height = GRID * pixelSize;
+  canvas.style.width = (GRID * pixelSize) + 'px';
+  canvas.style.height = (GRID * pixelSize) + 'px';
+}
+
+// ── Checkerboard for transparency ──
+function drawCheckerboard() {
+  const checkSize = pixelSize / 2;
+  for (let r = 0; r < GRID; r++) {
+    for (let c = 0; c < GRID; c++) {
+      const px = pixels[r * GRID + c];
+      if (px === TRANSPARENT || px === 'transparent' || !px) {
+        for (let cy = 0; cy < 2; cy++) {
+          for (let cx = 0; cx < 2; cx++) {
+            ctx.fillStyle = ((cy + cx) % 2 === 0) ? '#2a2a3e' : '#22223a';
+            ctx.fillRect(c * pixelSize + cx * checkSize, r * pixelSize + cy * checkSize, checkSize, checkSize);
+          }
+        }
+      }
+    }
+  }
+}
+
+// ── Draw static ──
+function drawFull() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawCheckerboard();
+  for (let r = 0; r < GRID; r++) {
+    for (let c = 0; c < GRID; c++) {
+      const px = pixels[r * GRID + c];
+      if (px && px !== TRANSPARENT && px !== 'transparent') {
+        ctx.fillStyle = px;
+        ctx.fillRect(c * pixelSize, r * pixelSize, pixelSize, pixelSize);
+      }
+    }
+  }
+  if (showGrid) drawGridLines();
+}
+
+function drawGridLines() {
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= GRID; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * pixelSize, 0);
+    ctx.lineTo(i * pixelSize, GRID * pixelSize);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, i * pixelSize);
+    ctx.lineTo(GRID * pixelSize, i * pixelSize);
+    ctx.stroke();
+  }
+}
+
+// ── Animated draw ──
+let animating = false;
+function animateDraw() {
+  if (animating) return;
+  animating = true;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawCheckerboard();
+
+  const total = GRID * GRID;
+  let idx = 0;
+  const progressFill = document.getElementById('progressFill');
+
+  function step() {
+    if (idx >= total) {
+      animating = false;
+      if (showGrid) drawGridLines();
+      progressFill.style.width = '100%';
+      setTimeout(() => { progressFill.style.width = '0%'; }, 500);
+      return;
+    }
+
+    // Draw batch of pixels per frame for smooth speed
+    const batch = Math.max(1, Math.floor(total / 120));
+    for (let b = 0; b < batch && idx < total; b++, idx++) {
+      const r = Math.floor(idx / GRID);
+      const c = idx % GRID;
+      const px = pixels[idx];
+      if (px && px !== TRANSPARENT && px !== 'transparent') {
+        ctx.fillStyle = px;
+        ctx.fillRect(c * pixelSize, r * pixelSize, pixelSize, pixelSize);
+      }
+    }
+
+    progressFill.style.width = (idx / total * 100) + '%';
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+// ── Palette ──
+function renderPalette() {
+  const row = document.getElementById('paletteRow');
+  row.innerHTML = '';
+  const usedColors = new Set();
+  for (const px of pixels) {
+    if (px && px !== TRANSPARENT && px !== 'transparent') usedColors.add(px.toUpperCase());
+  }
+  const colors = palette.length > 0
+    ? palette.filter(c => c !== TRANSPARENT && c !== 'transparent')
+    : [...usedColors];
+
+  for (const color of colors) {
+    const swatch = document.createElement('div');
+    swatch.className = 'palette-swatch';
+    swatch.style.background = color;
+    const tip = document.createElement('span');
+    tip.className = 'tooltip';
+    tip.textContent = color.toUpperCase();
+    swatch.appendChild(tip);
+    row.appendChild(swatch);
+  }
+}
+
+// ── Controls ──
+document.getElementById('replayBtn').addEventListener('click', animateDraw);
+
+document.getElementById('gridBtn').addEventListener('click', function() {
+  showGrid = !showGrid;
+  this.classList.toggle('active', showGrid);
+  drawFull();
+});
+
+document.getElementById('zoomBtn').addEventListener('click', function() {
+  if (zoom === 1) { zoom = 2; this.textContent = '1x'; }
+  else { zoom = 1; this.textContent = '2x'; }
+  calcSize();
+  drawFull();
+});
+
+// ── Init ──
+calcSize();
+renderPalette();
+animateDraw(); // animated draw on first load
+</script>
+</body>
+</html>
